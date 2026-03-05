@@ -1,0 +1,8 @@
+{
+  "Maths": ["math", "mathematics", "algebra", "geometry", "calculus", "trigonometry", "probability", "statistics"],
+  "English": ["english", "grammar", "vocabulary", "reading", "writing", "comprehension"],
+  "Verbal": ["verbal", "verbal ability", "sentence", "analogies", "antonyms", "synonyms"],
+  "Physics": ["physics", "mechanics", "optics", "thermodynamics", "electromagnetism"],
+  "Chemistry": ["chemistry", "organic", "inorganic", "stoichiometry", "reaction"],
+  "Programming": ["programming", "python", "java", "c++", "coding", "algorithms", "data structures"]
+}

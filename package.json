@@ -1,0 +1,14 @@
+{
+  "name": "telegram-course-overlay",
+  "version": "0.1.0",
+  "description": "Electron overlay that mirrors Telegram course channel as folder tree (shortcuts).",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^26.0.0"
+  }
+}

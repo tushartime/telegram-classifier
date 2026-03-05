@@ -1,0 +1,651 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data:;">
+    <title>Telegram Course Overlay</title>
+    <style>
+      :root {
+        --bg: #050816;
+        --bg-elevated: #0f172a;
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.15);
+        --border-subtle: #1f2937;
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --danger: #f97373;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+        color: var(--text-main);
+      }
+
+      h3 {
+        margin: 0 0 12px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      h4 {
+        margin: 0 0 8px;
+      }
+
+      .app-shell {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        padding: 10px 14px;
+        gap: 10px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(17,24,39,0.96));
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        box-shadow: 0 18px 35px rgba(15,23,42,0.8);
+      }
+
+      .toolbar-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .toolbar-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        min-width: 80px;
+      }
+
+      .input, .select {
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border-subtle);
+        background: rgba(15,23,42,0.9);
+        color: var(--text-main);
+        font-size: 13px;
+        outline: none;
+      }
+
+      .input::placeholder {
+        color: rgba(156, 163, 175, 0.8);
+      }
+
+      .input:focus, .select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent-soft);
+      }
+
+      button {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        color: var(--text-main);
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: background 0.12s ease, transform 0.06s ease, box-shadow 0.12s ease;
+      }
+
+      button.primary {
+        border-color: rgba(56,189,248,0.5);
+        background: linear-gradient(135deg, #0ea5e9, #22d3ee);
+        color: #0b1120;
+        font-weight: 600;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 16px rgba(15,23,42,0.7);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .main {
+        flex: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 10px;
+        min-height: 0;
+      }
+
+      .panel {
+        border-radius: 10px;
+        background: rgba(15, 23, 42, 0.98);
+        border: 1px solid rgba(31, 41, 55, 0.9);
+        box-shadow: 0 18px 35px rgba(15,23,42,0.9);
+        padding: 10px 10px 8px;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
+      .panel-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .panel-subtitle {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      #tree {
+        border-radius: 8px;
+        background: radial-gradient(circle at top left, rgba(56,189,248,0.12), transparent 35%),
+                    radial-gradient(circle at bottom, rgba(129,140,248,0.08), transparent 40%),
+                    #020617;
+        padding: 10px;
+        flex: 1;
+        overflow: auto;
+        font-size: 13px;
+      }
+
+      .category {
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(15,23,42,0.9);
+        margin-bottom: 6px;
+        overflow: hidden;
+      }
+
+      .category-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 8px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .category-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+      }
+
+      .pill {
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 11px;
+      }
+
+      .chevron {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .category-body {
+        padding: 4px 8px 6px;
+        border-top: 1px solid rgba(31,41,55,0.85);
+      }
+
+      .section {
+        margin-bottom: 4px;
+      }
+
+      .section-title {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-muted);
+        margin-bottom: 2px;
+      }
+
+      .lecture {
+        cursor: pointer;
+        padding: 3px 7px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-main);
+      }
+
+      .lecture-index {
+        width: 20px;
+        text-align: right;
+        color: var(--text-muted);
+        font-size: 11px;
+      }
+
+      .lecture:hover {
+        background: rgba(15, 118, 219, 0.26);
+      }
+
+      .lecture-caption {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .status-badge {
+        font-size: 11px;
+        padding: 1px 6px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.5);
+        color: var(--text-muted);
+      }
+
+      #log {
+        height: 100px;
+        overflow: auto;
+        background: #020617;
+        color: #9efb8f;
+        padding: 6px 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 11px;
+        border-radius: 6px;
+        border: 1px solid rgba(31,41,55,0.9);
+      }
+
+      .log-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .log-clear {
+        font-size: 11px;
+        padding: 1px 6px;
+      }
+
+      .search-input {
+        width: 160px;
+      }
+
+      .stats {
+        display: flex;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      @media (max-width: 900px) {
+        .main {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="toolbar" aria-label="Controls">
+        <div class="toolbar-row">
+          <h3>Telegram Course Overlay</h3>
+          <div class="stats" id="stats">
+            <span>Channel: <span id="statsChannel">–</span></span>
+            <span>| Videos: <span id="statsCount">0</span></span>
+          </div>
+        </div>
+        <div class="toolbar-row">
+          <span class="toolbar-label">Channel</span>
+          <input id="channel" class="input" type="text" placeholder="e.g. @some_channel or https://t.me/some_channel" />
+          <input id="limit" class="input" type="number" value="200" min="1" style="width:90px" />
+          <button id="importBtn" class="primary">
+            <span>Import & classify</span>
+          </button>
+          <button id="refreshBtn">Refresh Tree</button>
+          <input id="searchInput" class="input search-input" type="text" placeholder="Search captions…" />
+        </div>
+        <div class="toolbar-row">
+          <span class="toolbar-label">Session</span>
+          <input id="sessionName" class="input" type="text" placeholder="telegram_course_session" style="width:220px;" />
+          <button id="showSessionBtn">Show session</button>
+          <button id="deleteSessionBtn">Delete session</button>
+          <span class="toolbar-label">Login</span>
+          <input id="loginPhone" class="input" type="text" placeholder="+91999xxxxxxx" style="width:170px;" />
+          <button id="sendCodeBtn">Send code</button>
+          <input id="loginCode" class="input" type="text" placeholder="Code" style="width:80px;" />
+          <input id="loginPassword" class="input" type="password" placeholder="2FA (optional)" style="width:130px;" />
+          <button id="verifyLoginBtn">Verify</button>
+        </div>
+        <div class="toolbar-row">
+          <span class="toolbar-label">LLM</span>
+          <select id="llmBackend" class="select" style="width:135px">
+            <option value="">None</option>
+            <option value="gemini">Gemini (HTTP)</option>
+            <option value="vertex">Vertex</option>
+            <option value="http">Custom HTTP</option>
+          </select>
+          <input id="llmUrl" class="input" type="text" placeholder="LLM API URL (if needed)" />
+          <input id="llmKey" class="input" type="password" placeholder="Paste API key (in-memory only)" style="width:220px;" />
+          <button id="clearKeyBtn">Clear key</button>
+          <span class="toolbar-label">Categories</span>
+          <input id="userCategories" class="input" type="text" placeholder="Optional: Verbal, Quant, Aptitude, Reasoning" />
+          <span class="toolbar-label">Max cats</span>
+          <input id="maxCategories" class="input" type="number" min="0" value="0" style="width:80px;" title="0 = unlimited categories when LLM invents names" />
+        </div>
+      </div>
+
+      <div class="main" aria-label="Content">
+        <section class="panel" aria-label="Course structure">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Course structure</div>
+              <div class="panel-subtitle">Categories → sections → lectures</div>
+            </div>
+          </div>
+          <div id="tree" role="tree">No data. Import a channel to build the course structure.</div>
+        </section>
+
+        <section class="panel" aria-label="Details and logs">
+          <div class="panel-header">
+            <div class="panel-title">Activity</div>
+          </div>
+          <div class="log-header">
+            <span>Logs</span>
+            <button id="clearLogBtn" class="log-clear">Clear</button>
+          </div>
+          <div id="log" aria-live="polite"></div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const channelInput = document.getElementById('channel');
+      const limitInput = document.getElementById('limit');
+      const importBtn = document.getElementById('importBtn');
+      const refreshBtn = document.getElementById('refreshBtn');
+      const tree = document.getElementById('tree');
+      const log = document.getElementById('log');
+      const statsChannel = document.getElementById('statsChannel');
+      const statsCount = document.getElementById('statsCount');
+      const searchInput = document.getElementById('searchInput');
+      let loginCodeHash = '';
+      let lastTreeData = null;
+
+      function appendLog(s) {
+        log.innerText += s + '\\n';
+        log.scrollTop = log.scrollHeight;
+      }
+
+      window.api.onLog((d) => appendLog(d));
+
+      importBtn.onclick = async () => {
+        const channel = channelInput.value.trim();
+        if (!channel) { alert('Enter channel'); return; }
+        appendLog('Starting import for ' + channel);
+        importBtn.disabled = true;
+      const llmBackend = document.getElementById('llmBackend').value;
+      const llmUrl = document.getElementById('llmUrl').value.trim();
+      const llmKey = document.getElementById('llmKey').value;
+      const userCategories = document.getElementById('userCategories').value.trim();
+      const maxCategoriesRaw = document.getElementById('maxCategories').value;
+      const args = { channel, limit: Number(limitInput.value), out: './output' };
+      if (llmBackend) args.llmBackend = llmBackend;
+      if (llmUrl) {
+        if (llmBackend === 'gemini') args.geminiApiUrl = llmUrl;
+        else args.llmApiUrl = llmUrl;
+      }
+      if (llmKey) {
+        if (llmBackend === 'gemini') args.geminiApiKey = llmKey;
+        else args.llmApiKey = llmKey;
+      }
+      const sessionName = document.getElementById('sessionName').value.trim();
+      if (sessionName) args.sessionName = sessionName;
+      if (userCategories) args.userCategories = userCategories;
+      const maxCategories = parseInt(maxCategoriesRaw || '0', 10);
+      if (!Number.isNaN(maxCategories) && maxCategories > 0) {
+        args.maxCategories = maxCategories;
+      }
+      const res = await window.api.runImport(args);
+        importBtn.disabled = false;
+        if (res.ok) {
+          appendLog('Import finished — building tree');
+          renderTree(res.data);
+        } else {
+          appendLog('Import failed: ' + (res.error || 'unknown'));
+        }
+      };
+
+      refreshBtn.onclick = async () => {
+        const res = await window.api.readIndex('./output/index.json');
+        if (res.ok) renderTree(res.data);
+        else appendLog('Read index failed: ' + (res.error || 'no index'));
+      };
+      document.getElementById('clearLogBtn').onclick = () => {
+        log.innerText = '';
+      };
+      document.getElementById('clearKeyBtn').onclick = () => {
+        document.getElementById('llmKey').value = '';
+        appendLog('LLM key cleared from memory.');
+      };
+      document.getElementById('showSessionBtn').onclick = async () => {
+        const name = document.getElementById('sessionName').value.trim() || undefined;
+        const res = await window.api.getSessionInfo(name);
+        if (res) {
+          appendLog(`Session name: ${res.sessionName}`);
+          appendLog(`Session path: ${res.sessionPath}`);
+          appendLog(`Exists: ${res.exists}`);
+        } else {
+          appendLog('Failed to get session info');
+        }
+      };
+      document.getElementById('deleteSessionBtn').onclick = async () => {
+        const name = document.getElementById('sessionName').value.trim();
+        if (!name) { alert('Enter session name to delete'); return; }
+        const resInfo = await window.api.getSessionInfo(name);
+        if (!resInfo || !resInfo.exists) { appendLog('Session file does not exist'); return; }
+        if (!confirm('Delete session file ' + resInfo.sessionPath + '? This will require you to re-login.')) return;
+        const res = await window.api.deleteSession(resInfo.sessionPath);
+        if (res.ok) appendLog('Session deleted');
+        else appendLog('Delete failed: ' + (res.error || 'unknown'));
+      };
+
+      document.getElementById('sendCodeBtn').onclick = async () => {
+        const phone = document.getElementById('loginPhone').value.trim();
+        const sessionName = document.getElementById('sessionName').value.trim();
+        if (!phone) { alert('Enter phone in international format, e.g. +91999...'); return; }
+        appendLog('Sending login code to ' + phone);
+        const res = await window.api.sendLoginCode({ phone, sessionName });
+        if (res.ok) {
+          loginCodeHash = res.codeHash;
+          appendLog('Code sent successfully. Check your Telegram app.');
+        } else {
+          appendLog('Send code failed: ' + (res.error || 'unknown'));
+        }
+      };
+
+      document.getElementById('verifyLoginBtn').onclick = async () => {
+        const phone = document.getElementById('loginPhone').value.trim();
+        const code = document.getElementById('loginCode').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const sessionName = document.getElementById('sessionName').value.trim();
+        if (!phone || !code || !loginCodeHash) {
+          alert('Enter phone, click Send code, then enter the received code.');
+          return;
+        }
+        appendLog('Verifying login for ' + phone);
+        const res = await window.api.verifyLogin({ phone, code, codeHash: loginCodeHash, password, sessionName });
+        if (res.ok) {
+          appendLog('Login successful. Session saved.');
+        } else if (res.passwordNeeded) {
+          appendLog('Password (2FA) required. Enter it and click Verify again.');
+        } else {
+          appendLog('Login failed: ' + (res.error || 'unknown'));
+        }
+      };
+
+      function renderTree(data) {
+        tree.innerHTML = '';
+        lastTreeData = data || null;
+        if (!data) { tree.innerText = 'No data found'; statsCount.innerText = '0'; return; }
+
+        if (data.channel) {
+          statsChannel.innerText = data.channel;
+        }
+
+        // New format: categorized tree from tree.json
+        if (data.categories) {
+          const categories = data.categories;
+          const catNames = Object.keys(categories);
+          if (!catNames.length) {
+            tree.innerText = 'No categorized items.';
+            statsCount.innerText = '0';
+            return;
+          }
+          let total = 0;
+          const query = (searchInput.value || '').toLowerCase().trim();
+          catNames.forEach(catName => {
+            const sections = categories[catName] || {};
+            let catCount = 0;
+
+            const catDiv = document.createElement('div');
+            catDiv.className = 'category';
+
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            const title = document.createElement('div');
+            title.className = 'category-title';
+            const chevron = document.createElement('span');
+            chevron.className = 'chevron';
+            chevron.textContent = '▾';
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = catName;
+            const pill = document.createElement('span');
+            pill.className = 'pill';
+            pill.textContent = '0';
+
+            title.appendChild(chevron);
+            title.appendChild(nameSpan);
+            header.appendChild(title);
+            header.appendChild(pill);
+            catDiv.appendChild(header);
+
+            const body = document.createElement('div');
+            body.className = 'category-body';
+
+            Object.keys(sections).forEach(secName => {
+              const items = sections[secName] || [];
+              const secDiv = document.createElement('div');
+              secDiv.className = 'section';
+              const h = document.createElement('div');
+              h.className = 'section-title';
+              h.innerText = secName + ' (' + items.length + ')';
+              secDiv.appendChild(h);
+
+              items.forEach((m, idx) => {
+                const capLine = (m.caption || '').split('\\n')[0];
+                if (query && !capLine.toLowerCase().includes(query)) return;
+                const d = document.createElement('div');
+                d.className = 'lecture';
+                const idxSpan = document.createElement('span');
+                idxSpan.className = 'lecture-index';
+                idxSpan.textContent = String(idx + 1);
+                const capSpan = document.createElement('span');
+                capSpan.className = 'lecture-caption';
+                capSpan.textContent = capLine.slice(0, 120) || '(no title)';
+                d.appendChild(idxSpan);
+                d.appendChild(capSpan);
+                d.onclick = () => window.api.openExternal(m.link);
+                secDiv.appendChild(d);
+                catCount += 1;
+                total += 1;
+              });
+
+              body.appendChild(secDiv);
+            });
+
+            pill.textContent = String(catCount);
+            if (catCount === 0) {
+              // hide empty categories under current search
+              return;
+            }
+
+            header.onclick = () => {
+              const isHidden = body.style.display === 'none';
+              body.style.display = isHidden ? 'block' : 'none';
+              chevron.textContent = isHidden ? '▾' : '▸';
+            };
+
+            catDiv.appendChild(body);
+            tree.appendChild(catDiv);
+          });
+          statsCount.innerText = String(total);
+          return;
+        }
+
+        // Fallback: old flat index.json format
+        if (!data.messages) { tree.innerText = 'No messages found'; return; }
+        const sections = {};
+        data.messages.forEach(m => {
+          const cap = m.caption || '';
+          let sec = 'Misc';
+          const first = (cap.split('\\n')[0] || '');
+          const re = /(module|week|chapter|part|section)\\s*[:\\-\\s]*#?\\s*(\\d+)/i;
+          const r2 = /(lecture|lec)\\s*[:\\-\\s]*#?\\s*(\\d+)/i;
+          if (re.test(first)) {
+            sec = first.match(re)[0];
+          } else if (r2.test(first)) {
+            sec = 'Lectures';
+          }
+          sections[sec] = sections[sec] || [];
+          sections[sec].push(m);
+        });
+
+        let total = 0;
+        Object.keys(sections).forEach(secName => {
+          const secDiv = document.createElement('div');
+          secDiv.className = 'section';
+          const h = document.createElement('h4');
+          h.innerText = secName + ' (' + sections[secName].length + ')';
+          secDiv.appendChild(h);
+          sections[secName].forEach((m, idx) => {
+            const d = document.createElement('div');
+            d.className = 'lecture';
+            d.innerText = `${idx+1}. ${(m.caption || '').split('\\n')[0].slice(0,100)}`;
+            d.onclick = () => window.api.openExternal(m.link);
+            secDiv.appendChild(d);
+            total += 1;
+          });
+          tree.appendChild(secDiv);
+        });
+        statsCount.innerText = String(total);
+      }
+
+      searchInput.addEventListener('input', () => {
+        if (lastTreeData) {
+          renderTree(lastTreeData);
+        }
+      });
+    </script>
+  </body>
+</html>
